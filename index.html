@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium 청소 당번 추첨 시스템</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    },
+                    boxShadow: {
+                        'neon': '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(147, 51, 234, 0.2)',
+                        'inner-dark': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.6)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome (아이콘) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <!-- SweetAlert2 Dark Theme CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: radial-gradient(circle at top, #1e1b4b 0%, #0f172a 100%);
+        }
+
+        /* 당번 숫자가 순차적으로 통통 튀어나오는 고성능 애니메이션 */
+        .ball-appear {
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) translateY(50px);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.1) translateY(-10px);
+            }
+            70% {
+                transform: scale(0.9) translateY(5px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* 입체적이고 역동적인 그라데이션 회전 효과 배경 */
+        .glow-effect {
+            position: relative;
+        }
+        .glow-effect::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(59, 130, 246, 0.15), transparent, rgba(147, 51, 234, 0.15), transparent);
+            animation: rotateGlow 15s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotateGlow {
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="h-full flex items-center justify-center p-4 overflow-x-hidden">
+
+    <!-- 메인 대시보드 카드 -->
+    <div class="glow-effect w-full max-w-lg bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 md:p-10 shadow-neon">
+        
+        <!-- 상단 타이틀 구역 -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-purple-600 mb-4 shadow-lg">
+                <i class="fa-solid fa-broom text-2xl text-white animate-pulse"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight mb-2 bg-gradient-to-r from-blue-400 via-indigo-200 to-purple-400 bg-clip-text text-transparent">
+                청소 당번 추첨 시스템
+            </h1>
+            <p class="text-slate-400 text-sm font-medium">
+                <span class="badge bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded">1번 ~ 30번</span> 
+                중 공정하고 투명하게 <span class="text-blue-400 font-bold">5명</span>을 선출합니다.
+            </p>
+        </div>
+
+        <!-- 미니 정보 보드 (Bootstrap / Tailwind 하이브리드 조합) -->
+        <div class="bg-slate-900/60 rounded-2xl p-4 border border-slate-700/30 mb-8 shadow-inner-dark text-center">
+            <div class="flex justify-around items-center text-slate-300 text-sm">
+                <div>
+                    <span class="block text-xs text-slate-500 uppercase mb-1">총 인원</span>
+                    <span class="text-lg font-bold text-slate-200">30명</span>
+                </div>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <div>
+                    <span class="block text-xs text-slate-500 uppercase mb-1">선출 당번</span>
+                    <span class="text-lg font-bold text-blue-400">5명</span>
+                </div>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <div>
+                    <span class="block text-xs text-slate-500 uppercase mb-1">알고리즘</span>
+                    <span class="text-lg font-bold text-purple-400">Random 32</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과가 출력되는 라이브 보드 구역 -->
+        <div class="min-h-[100px] flex flex-wrap justify-center items-center gap-3 md:gap-4 my-8" id="resultContainer">
+            <!-- 기본 상태 대기 화면 -->
+            <div id="placeholderText" class="text-slate-500 text-center py-6 font-medium border-2 border-dashed border-slate-700/60 rounded-2xl w-full">
+                <i class="fa-solid fa-circle-question block text-3xl mb-2 text-slate-600"></i>
+                아래 버튼을 눌러 당번을 추첨해주세요!
+            </div>
+        </div>
+
+        <!-- 액션 제어 버튼 컴포넌트 -->
+        <div class="grid grid-cols-1 gap-3">
+            <button onclick="startLotteryWithAlert()" class="btn btn-primary bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 border-0 py-3 rounded-xl font-bold text-base transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-98 shadow-md flex items-center justify-center gap-2 text-white">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                지금 추첨하기
+            </button>
+            
+            <button onclick="resetSystem()" id="btnReset" class="btn btn-outline-secondary border-slate-600 hover:bg-slate-700 text-slate-400 font-medium py-2 rounded-xl text-sm transition-all duration-200 hidden">
+                <i class="fa-solid fa-rotate-right mr-1"></i> 데이터 초기화
+            </button>
+        </div>
+
+        <!-- 하단 정보 단락 -->
+        <div class="text-center mt-8 text-xs text-slate-600 font-medium">
+            &copy; 2026 Smart Cleaning Picker Cloud. All rights reserved.
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 스크립트 비즈니스 로직 -->
+    <script>
+        // SweetAlert2 알림 토스트 기본 설정 (우측 상단에 미려하게 노출)
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            background: '#1e293b',
+            color: '#fff',
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        // SweetAlert2 인터랙티브 메인 모달 팝업 호출 함수
+        function startLotteryWithAlert() {
+            Swal.fire({
+                title: '🎉 당번 추첨 완료!',
+                text: '무작위 연산으로 공정하게 5명의 당번을 선정했습니다.',
+                icon: 'success',
+                background: '#1e293b', // 앱 전체적인 톤 앤 매너 일치
+                color: '#fff',
+                confirmButtonColor: '#3b82f6', 
+                confirmButtonText: '<i class="fa-solid fa-eye mr-1"></i> 당번 확인하기',
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeDrawing();
+                }
+            });
+        }
+
+        // 실제 추첨 및 화면 단 렌더링 로직
+        function executeDrawing() {
+            const container = document.getElementById('resultContainer');
+            const placeholder = document.getElementById('placeholderText');
+            const btnReset = document.getElementById('btnReset');
+            
+            // 기존 뷰 클리어
+            container.innerHTML = '';
+            if(placeholder) placeholder.style.display = 'none';
+
+            const selectedNumbers = [];
+
+            // 중복 없이 1 ~ 30 사이 난수 5개 추출
+            while (selectedNumbers.length < 5) {
+                const randomNum = Math.floor(Math.random() * 30) + 1;
+                if (!selectedNumbers.includes(randomNum)) {
+                    selectedNumbers.push(randomNum);
+                }
+            }
+
+            // 가독성을 극대화하기 위해 오름차순 정렬
+            selectedNumbers.sort((a, b) => a - b);
+
+            // 입체감 넘치는 로또 볼 형식의 컴포넌트 동적 생성 및 애니메이션 딜레이 부여
+            selectedNumbers.forEach((num, index) => {
+                const ball = document.createElement('div');
+                
+                // 럭셔리 네온 그라데이션 및 입체 유리 효과 클래스 바인딩
+                ball.className = `ball-appear w-14 h-14 md:w-16 md:h-16 rounded-full 
+                                  bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-500 
+                                  text-white font-extrabold text-xl md:text-2xl 
+                                  flex items-center justify-center shadow-lg border border-white/20 
+                                  relative overflow-hidden`;
+                
+                // 빛 반사 효과 디자인을 위한 마스크 마크업 주입
+                ball.innerHTML = `
+                    <span class="relative z-10">${num}</span>
+                    <span class="absolute top-0 left-0 w-full h-1/2 bg-white/10 rounded-b-full"></span>
+                `;
+                
+                // 순차 연출 딜레이
+                ball.style.animationDelay = `${index * 0.12}s`;
+                
+                container.appendChild(ball);
+            });
+
+            // 화면 하단에 완료 안내 토스트 실행
+            Toast.fire({
+                icon: 'info',
+                title: '당번 명단이 아래 보드에 공개되었습니다.'
+            });
+
+            // 초기화(리셋) 버튼 노출
+            btnReset.classList.remove('hidden');
+        }
+
+        // 시스템 리셋 함수
+        function resetSystem() {
+            const container = document.getElementById('resultContainer');
+            const btnReset = document.getElementById('btnReset');
+            
+            container.innerHTML = `
+                <div id="placeholderText" class="text-slate-500 text-center py-6 font-medium border-2 border-dashed border-slate-700/60 rounded-2xl w-full">
+                    <i class="fa-solid fa-circle-question block text-3xl mb-2 text-slate-600"></i>
+                    아래 버튼을 눌러 당번을 추첨해주세요!
+                </div>
+            `;
+            
+            btnReset.classList.add('hidden');
+
+            Toast.fire({
+                icon: 'success',
+                title: '시스템이 초기화되었습니다.'
+            });
+        }
+    </script>
+</body>
+</html>
